@@ -1,0 +1,16 @@
+--- #YAML:1.0
+
+main:
+  port: '/dev/ttyACM0'
+
+rest:
+  host: '127.0.0.1'
+
+email:
+  enable_api: 1
+
+  host: 'smtp.domain.tld'
+  username: 'alarmapi@domain.tld'
+  password: ''
+
+  mail_to: 'alarm@domain.tld'
