@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import os
-from flask import Flask, request, url_for, render_template
+from flask import Flask, url_for, redirect
 from alarm.shared import Action
 
 
-app = Flask(__name__,
-            static_url_path=os.path.dirname(os.path.dirname(__file__)))
+app = Flask(__name__, static_url_path='/static', static_folder='../static')
 
 
 @app.route('/')
 def home():
-    return app.send_static_file('/static/index.html')
-#    return render_template(url_for('static', filename='index.html'))
+    return redirect(url_for('static', filename='index.html'))
 
 
 @app.route("/alive")
