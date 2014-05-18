@@ -98,7 +98,8 @@ class IMAP(object):
                 body = msg.get_payload()
                 try:
                     verify = self.gpg.verify(body)
-                except:
+                except Exception as err:
+                    sys.stderr.write('   ID %d: %s' % (msgid, err))
                     continue
 
                 if verify.valid:
