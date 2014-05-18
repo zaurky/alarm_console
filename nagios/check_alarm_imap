@@ -1,0 +1,40 @@
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+CHECK_FILE='/var/local/alarm.imap.alive'
+
+
+ACTIVE=`python -c '
+import yaml
+print yaml.load(open("/etc/alarmapi.yaml"))["email"]["enable_api"]
+'`
+
+if [ $ACTIVE != '1' ]; then
+    echo "ALARM IMAP: Failed"
+    exit $STATE_CRITICAL
+fi
+
+rm -f $CHECK_FILE
+
+EMAIL=`python -c '
+import yaml
+print yaml.load(open("/etc/alarmapi.yaml"))["email"]["username"]
+'`
+
+echo "alive" | mail -s 'alive' $EMAIL
+
+sleep 12
+
+if [ -e $CHECK_FILE ]; then
+    echo "ALARM IMAP: OK"
+    exit 0
+else
+    echo "ALARM IMAP: Failed"
+    exit $STATE_CRITICAL
+fi
+

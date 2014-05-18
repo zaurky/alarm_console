@@ -1,0 +1,25 @@
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+
+IP=`python -c '
+import yaml
+print yaml.load(open("/etc/alarmapi.yaml"))["rest"]["host"]
+'` 2> /dev/null > /dev/null
+
+curl -s -I http://$IP:5000/alive | grep "HTTP/1.0 200 OK" > /dev/null
+
+STATE=$?
+if [ "$STATE" = "$STATE_OK" ]; then
+    echo "ALARM REST: OK"
+    exit 0
+else
+    echo "ALARM REST: Failed"
+    exit $STATE_CRITICAL
+fi
+
