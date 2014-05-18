@@ -65,7 +65,7 @@ class IMAP(object):
 
     def run(self):
         for action in ['alive', 'photo', 'status', 'arm', 'disarm',
-                       'mute', 'logs', 'droplogs']:
+                       'mute', 'logs', 'droplogs', 'alive']:
 
             try:
                 _select_info = self.server.select_folder(action)
@@ -84,6 +84,10 @@ class IMAP(object):
             response = self.server.fetch(messages, ['FLAGS', 'RFC822.SIZE'])
             for msgid, data in response.iteritems():
                 msgids.append(msgid)
+                if action == 'alive':
+                    open('/var/local/alarm.imap.alive', 'a').close()
+                    continue
+
                 sys.stderr.write('   ID %d: %d bytes, flags=%s\n' % (msgid,
                                                         data['RFC822.SIZE'],
                                                         data['FLAGS']))
