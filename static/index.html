@@ -1,6 +1,157 @@
-<ul>
-<li><a href='/arm/3'>Arm level 3</a></li>
-<li><a href='/arm/2'>Arm level 2</a></li>
-<li><a href='/arm/1'>Arm level 1</a></li>
-<li><a href='/disarm'>Disarm</a></li>
-</ul>
+<html>
+    <head>
+        <link href="css/bootstrap.min.css" rel="stylesheet"/>
+        <style>
+/* Custom button -------------------------------------------------- */
+
+/* Override base .btn styles */
+/* Apply text and background changes to three key states: default, hover, and active (click). */
+.btn-ttc,
+.btn-ttc:hover,
+.btn-ttc:active {
+  color: white;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+  background-color: #007da7;
+}
+
+/* Apply the custom-colored gradients */
+/* Note: you'll need to include all the appropriate gradients for various browsers and standards. */
+.btn-ttc {
+  background-repeat: repeat-x;
+  background-image: linear-gradient(top, #009ED2 0%, #007DA7 100%);
+  text-align: center;
+  width: 50px;
+}
+
+/* Set the hover state */
+/* An easy hover state is just to move the gradient up a small amount. Add other embellishments as you see fit. */
+.btn-ttc:hover {
+  background-position: 0 -15px;
+}
+
+html,body {
+    width: 100%;
+}
+
+h2 {
+    text-align: center;
+}
+
+table {
+    margin-top: 30px;
+    margin-left: 5px;
+    width: 98%;
+}
+
+table {
+    border:1px solid grey;
+    text-color: white;
+}
+
+th,td {
+    padding: 5px;
+}
+
+td.button {
+    width: 25px;
+}
+
+.log {
+    margin-top: 30px;
+    text-align: center;
+    height:25px;
+    border:1px solid black;
+}
+        </style>
+        <script>
+
+function update_log() {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", "/status", true);
+    xmlhttp.setRequestHeader("Content-type", "json");
+    xmlhttp.onreadystatechange=function() {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+            var log = document.getElementById('log');
+            console.log(log);
+            log.textContent = xmlhttp.responseText;
+        }
+    }
+    xmlhttp.send();
+}
+
+function alarm(url) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", url, true);
+    xmlhttp.setRequestHeader("Content-type", "json");
+    xmlhttp.send();
+    update_log();
+}
+
+function arm(level) {
+    alarm("/arm/" + level);
+}
+
+function disarm() {
+    alarm("/disarm");
+}
+
+function mute() {
+    alarm("/mute");
+}
+
+function photo() {
+    alarm("/photo");
+}
+
+function logs() {
+    alarm("/logs");
+}
+
+function init() {
+    setInterval(update_log, 20000);
+    update_log();
+}
+
+        </script>
+    </head>
+    <body onload='init();'>
+        <h2>Alarm control center </h2>
+        <table border>
+            <tr>
+                <td colspan='2'>
+                    <p id='log' name='log' onclick='update_log();'>&nbsp;</p>
+                </td>
+            </tr>
+            <tr>
+                <td>Alarm level 3 (doors)</td>
+                <td class='button'>
+                    <button type="button" class="btn btn-ttc" onclick='arm(3);'>OK</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Alarm level 2 (doors+presence)</td>
+                <td class='button'>
+                    <button type="button" class="btn btn-ttc" onclick='arm(2);'>OK</button>
+                 </td>
+            </tr>
+            <tr>
+                <td>Disarm alarm</td>
+                <td class='button'>
+                    <button type="button" class="btn btn-ttc" onclick='disarm();'>OK</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Mute alarm</td>
+                <td class='button'>
+                    <button type="button" class="btn btn-ttc" onclick='mute();'>OK</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Take a picture</td>
+                <td class='button'>
+                    <button type="button" class="btn btn-ttc" onclick='photo();'>OK</button>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
