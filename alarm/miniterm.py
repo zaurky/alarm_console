@@ -307,8 +307,8 @@ class Miniterm(object):
                     menu_active = False
                 elif char in self.config.menu_char: # next char will be for menu
                     menu_active = True
-                elif char == '\n':
-                    self.serial.write(self.newline)  # send newline character(s)
+                elif char == '\n' or ord(char) == 10:
+                    sys.stderr.write('\n')
                 else:
                     self.serial.write(char)  # send character
         except:
