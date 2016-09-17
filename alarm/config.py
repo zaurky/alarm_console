@@ -51,6 +51,8 @@ class Config(OptionParser):
                         default=self._conf['rest'].get('host'))
         self.add_option('--disable_rest_api', dest='rest_api',
                         default=self._conf['rest'].get('disable_api', False))
+        self.add_option('--sms_to', dest='sms_to', default=False)
+        self.add_option('--sms_api', dest='sms_api', default=False)
 
         (self.options, args) = self.parse_args()
 
@@ -72,6 +74,9 @@ class Config(OptionParser):
         else:
             if port is None:
                 self.options.port = 0
+
+        if self.options.sms_to:
+            self.options.sms_to = self.options.sms_to.split(',')
 
     @property
     def port(self):

@@ -8,6 +8,8 @@ from subprocess import call
 import sys
 import threading
 import time
+import requests
+import json
 
 from alarm.config import ARMCODE, DISARMCODE, MUTECODE, STATUSCODE
 from alarm.console import Console
@@ -56,6 +58,7 @@ class Miniterm(object):
     api_thread = None
     imap_api_thread = None
     alive = False
+    do_send_image = False
 
     def __init__(self, config):
         self.config = config
@@ -105,6 +108,12 @@ class Miniterm(object):
         self.password = self.config.options.password
         self.api_host = self.config.options.api_host
         self.email_api = self.config.options.email_api
+        self.sms = self.config.options.sms_to
+        self.sms_api = self.config.options.sms_api
+        if self.sms_api:
+            self.log.print_local('-- Starting sms api on %s --\n' % self.sms_api)
+            self.log.print_local('   sms recipients : %s\n' %
+                                 ', '.join(self.sms))
 
         self.smtp = SMTP(self.username, self.password, self.host,
                          self.username, self.mail_to)
@@ -168,34 +177,52 @@ class Miniterm(object):
         self.smtp.send_mail(title, message or '', images, self.mail_to)
         self.log.print_local('done\n')
 
+    def _send_sms(self, message):
+        if self.sms:
+            msg = '\n'.join([m for m in message.split('\n') if 'EVENT:' in m])
+            param = {'msg': msg}
+            self.log.print_local('sending sms\n')
+            for recipient in self.sms:
+                self.log.print_local('sending message to %s\n' % recipient)
+                requests.post('http://%s/send/%s' % (self.sms_api, recipient),
+                              data=json.dumps(param))
+            self.log.print_local('done\n')
+
     def send_image(self, message):
         self.log.print_local('taking photos')
 
         title = '[Alarm] %s' % (datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
         filename = '/tmp/image_%03d.jpeg'
-        images = [filename % i for i in range(0, 3)]
-        for image in images:
+
+        images = []
+        for index in range(0, 3):
+            image = filename % index
+
             self.log.print_local('.')
             cmd = 'streamer -t 1 -r 2 -o %s' % image
             commands.getoutput(cmd)
 
-            call(['convert', '-resize', '32x32', '-colors', '32', image,
-                  '%s.png' % image])
+            if os.path.exists(image):
+                call(['convert', '-resize', '32x32', '-colors', '32', image,
+                      '%s.png' % image])
+                images.append(image)
             time.sleep(1)
 
         self.log.print_local('\n')
 
-        diff = '%s.png' % (filename % 4)
-        call(['composite', '-compose', 'subtract', '%s.png' % images[-2],
-              '%s.png' % images[-1], diff])
-        images.append(diff)
+        if len(images) > 2 and os.path.exists(images[-2]) and os.path.exists(images[-1]):
+            diff = '%s.png' % (filename % 4)
+            call(['composite', '-compose', 'subtract', '%s.png' % images[-2],
+                  '%s.png' % images[-1], diff])
+            images.append(diff)
 
         self._send_email(title, message or '', images)
 
     def send_message(self, message):
         title = '[Alarm] %s' % (datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         self._send_email(title, message)
+        self._send_sms(message)
 
     def parse(self, line):
         LOGS.append("%s : %s" % (
@@ -203,6 +230,8 @@ class Miniterm(object):
         if line.startswith('ALARM:'):
             ENV.send_image_f = LOGS.last()
         elif line.startswith('ERROR:'):
+            ENV.send_message_f = LOGS.last()
+        elif line.startswith('INFO: Alarm') and 'arm' in line:
             ENV.send_message_f = LOGS.last()
         elif line.startswith('INFO: The alarm is') and ENV.get_status:
             ENV.get_status = False
@@ -223,7 +252,10 @@ class Miniterm(object):
     def poller(self):
         while self.alive:
             if ENV.send_image_f:
-                self.send_image(ENV.send_image_f)
+                if self.do_send_image:
+                    self.send_image(ENV.send_image_f)
+                else:
+                    self.send_message(ENV.send_image_f)
                 ENV.send_image_f = False
 
             if ENV.send_message_f:
